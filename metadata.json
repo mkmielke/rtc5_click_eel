@@ -1,0 +1,64 @@
+{
+  "libName": "rtc5click",
+  "manufacturer": "Mikroelektronika",
+  "description": "",
+  "version": "",
+  "eelVersion": "3",
+  "shoppingCarLinks": {},
+  "requires": [
+    "embedded"
+  ],
+  "elements": [
+    {
+      "name": "RTC5Click",
+      "type": "EmbeddedRTC5Click",
+      "icon": "EmbeddedTouch.svg",
+      "defaultAbility": "getTime",
+      "defaultTrigger": "timeObtained",
+      "hidden": false,
+      "abilities": [
+        {
+          "name": "setup",
+          "hidden": true,
+          "triggers": []
+        },
+	{
+	  "name": "getTime",
+	  "hidden": false,
+	  "triggers": ["timeObtained"]
+	},
+	{
+	  "name": "startOscillator",
+	  "hidden": false,
+	  "triggers": ["oscillatorStarted"]
+	},
+	{
+	  "name": "stopOscillator",
+	  "hidden": false,
+	  "triggers": ["oscillatorStopped"]
+	}
+      ],
+      "properties": [
+        {
+          "name": "myproperty",
+          "input": "number",
+          "value": 0
+        }
+      ],
+      "triggers": [],
+      "variables": [],
+      "language": {
+        "en-US": {
+	  "EmbeddedRTC5Click": "RTC5 Click",
+	  "getTime": "Get Time",
+	  "timeObtained": "Time Obtained",
+	  "myproperty": "My Test Property",
+	  "startOscillator": "Start Oscillator",
+	  "oscillatorStarted": "Oscillator Started",
+	  "stopOscillator": "Stop Oscillator",
+	  "oscillatorStopped": "Oscillator Stopped"
+	}
+      }
+    }
+  ]
+}
