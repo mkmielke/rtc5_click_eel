@@ -90,6 +90,27 @@ RTC_Time curr_time;
 /******************************************************************************/
 /*                      Private Function Definitions                          */
 /******************************************************************************/
+static void _spi_init( ATMO_SPI_CS_t csPin )
+{
+	ATMO_GPIO_Config_t pinConfig;
+
+	// copied from SPI_0_init() -- spi_basic.c
+	SPI0.CTRLA = 1 << SPI_CLK2X_bp    /* Enable Double Speed: enabled */
+				 | 0 << SPI_DORD_bp   /* Data Order Setting: disabled */
+				 | 1 << SPI_ENABLE_bp /* Enable Module: enabled */
+				 | 1 << SPI_MASTER_bp /* SPI module in master mode */
+				 | SPI_PRESC_DIV4_gc; /* System Clock / 4 */
+
+	// disable the slave select line when operating as SPI master
+	SPI0.CTRLB |= SPI_SSD_bm;
+
+	// configure the CS pin
+	pinConfig.pinMode = ATMO_GPIO_PinMode_Output_PushPull;
+	pinConfig.initialState = ATMO_GPIO_PinState_High;
+	ATMO_GPIO_SetPinConfiguration( 0, csPin, &pinConfig );
+}
+
+
 static void _spi_write( const uint8_t *cmdBytes, uint16_t numCmdBytes, const uint8_t *writeBytes, uint16_t numWriteBytes )
 {
 	uint8_t ctrlb;
@@ -143,15 +164,7 @@ static void _spi_read( const uint8_t *cmdBytes, uint16_t numCmdBytes, uint8_t *r
 /******************************************************************************/
 ATMO_RTC5Click_Status_t ATMO_RTC5Click_Init( ATMO_RTC5Click_Config_t *config )
 {
-	ATMO_GPIO_Config_t pinConfig;
-	
-	// disable the slave select line when operating as SPI master
-	SPI0.CTRLB |= SPI_SSD_bm; 
-	
-	// configure the CS pin
-	pinConfig.pinMode = ATMO_GPIO_PinMode_Output_PushPull;
-	pinConfig.initialState = ATMO_GPIO_PinState_High;
-	ATMO_GPIO_SetPinConfiguration( 0, _SPI_CS, &pinConfig ); 
+	_spi_init( _SPI_CS ); 
 	
 	ATMO_RTC5Click_OscillatorStart();
 	
