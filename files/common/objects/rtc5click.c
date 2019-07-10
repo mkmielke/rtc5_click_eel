@@ -166,10 +166,10 @@ ATMO_RTC5Click_Status_t ATMO_RTC5Click_Init( ATMO_RTC5Click_Config_t *config )
 {
 	_spi_init( _SPI_CS ); 
 	
-	while ( ATMO_RTC5Click_OscillatorStart() != ATMO_RTC5Click_Status_Success )
+	if ( ATMO_RTC5Click_OscillatorStart() != ATMO_RTC5Click_Status_Success )
 	{
 		ATMO_RTC5Click_OscillatorStop();
-		ATMO_PLATFORM_DelayMilliseconds( 10 );
+		return ATMO_RTC5Click_Status_Fail;
 	}
 	
 	return ATMO_RTC5Click_Status_Success;
