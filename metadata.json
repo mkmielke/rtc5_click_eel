@@ -40,19 +40,30 @@
       ],
       "properties": [
         {
-          "name": "myproperty",
-          "input": "number",
-          "value": 0
-        }
+          "name": "gpioDriverInstance",
+          "input": "driverInstance",
+          "driverType": "gpio"
+        },
+	{
+	  "name": "csPin",
+	  "input": "number",
+	  "value": "P_CS"
+	}
       ],
       "triggers": [],
-      "variables": [],
+      "variables": [
+      	  {
+      	    "name": "handle",
+      	    "type": "ATMO_DriverInstanceHandle_t"
+	  }
+      	],
       "language": {
         "en-US": {
 	  "EmbeddedRTC5Click": "RTC5 Click",
 	  "getTime": "Get Time",
 	  "timeObtained": "Time Obtained",
-	  "myproperty": "My Test Property",
+	  "gpioDriverInstance": "GPIO Driver Instance",
+	  "csPin": "CS Pin",
 	  "startOscillator": "Start Oscillator",
 	  "oscillatorStarted": "Oscillator Started",
 	  "stopOscillator": "Stop Oscillator",

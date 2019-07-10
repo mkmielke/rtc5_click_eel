@@ -8,7 +8,7 @@
 /******************************************************************************/
 /*                                 Defines                                    */
 /******************************************************************************/
-#define _SPI_CS			P_CS
+#define _ATMO_MAX_RTC5_CLICKS	2
 
 #define _INSTR_READ		0x13
 #define _INSTR_WRITE	0x12
@@ -85,12 +85,14 @@ typedef union
 /*                            Global Variables                                */
 /******************************************************************************/
 static RTC_Time curr_time;
+static uint8_t currNumRTC5Clicks = 0;
+static ATMO_RTC5Click_Config_t _config[_ATMO_MAX_RTC5_CLICKS];
 
 
 /******************************************************************************/
 /*                      Private Function Definitions                          */
 /******************************************************************************/
-static void _spi_init( ATMO_SPI_CS_t csPin )
+static void _spi_init( ATMO_DriverInstanceHandle_t gpioDriverIntance, ATMO_SPI_CS_t csPin )
 {
 	ATMO_GPIO_Config_t pinConfig;
 
@@ -107,11 +109,11 @@ static void _spi_init( ATMO_SPI_CS_t csPin )
 	// configure the CS pin
 	pinConfig.pinMode = ATMO_GPIO_PinMode_Output_PushPull;
 	pinConfig.initialState = ATMO_GPIO_PinState_High;
-	ATMO_GPIO_SetPinConfiguration( 0, csPin, &pinConfig );
+	ATMO_GPIO_SetPinConfiguration( gpioDriverIntance, csPin, &pinConfig );
 }
 
 
-static void _spi_write( const uint8_t *cmdBytes, uint16_t numCmdBytes, const uint8_t *writeBytes, uint16_t numWriteBytes )
+static void _spi_write( ATMO_SPI_CS_t csPin, const uint8_t *cmdBytes, uint16_t numCmdBytes, const uint8_t *writeBytes, uint16_t numWriteBytes )
 {
 	uint8_t ctrlb;
 	
@@ -121,21 +123,21 @@ static void _spi_write( const uint8_t *cmdBytes, uint16_t numCmdBytes, const uin
 	SPI0.CTRLB = ( ctrlb & ~SPI_MODE_gm ) | ( SPI_MODE_3_gc);
 	
 	// assert CS
-	ATMO_GPIO_SetPinState( 0, _SPI_CS, ATMO_GPIO_PinState_Low );
+	ATMO_GPIO_SetPinState( 0, csPin, ATMO_GPIO_PinState_Low );
 
 	// write command and data
 	SPI_0_write_block( cmdBytes, numCmdBytes );
 	SPI_0_write_block( writeBytes, numWriteBytes );
 
 	// deassert CS
-	ATMO_GPIO_SetPinState( 0, _SPI_CS, ATMO_GPIO_PinState_High );
+	ATMO_GPIO_SetPinState( 0, csPin, ATMO_GPIO_PinState_High );
 	
 	// restore SPI0.CTRLB
 	SPI0.CTRLB = ctrlb;
 }
 
 
-static void _spi_read( const uint8_t *cmdBytes, uint16_t numCmdBytes, uint8_t *readBytes, uint16_t numReadBytes )
+static void _spi_read( ATMO_SPI_CS_t csPin, const uint8_t *cmdBytes, uint16_t numCmdBytes, uint8_t *readBytes, uint16_t numReadBytes )
 {
 	uint8_t ctrlb;
 	
@@ -145,14 +147,14 @@ static void _spi_read( const uint8_t *cmdBytes, uint16_t numCmdBytes, uint8_t *r
 	SPI0.CTRLB = ( ctrlb & ~SPI_MODE_gm ) | ( SPI_MODE_3_gc);
 	
 	// assert CS
-	ATMO_GPIO_SetPinState( 0, _SPI_CS, ATMO_GPIO_PinState_Low );
+	ATMO_GPIO_SetPinState( 0, csPin, ATMO_GPIO_PinState_Low );
 
 	// write command and read data
 	SPI_0_write_block( cmdBytes, numCmdBytes );
 	SPI_0_read_block( readBytes, numReadBytes );
 
 	// deassert CS
-	ATMO_GPIO_SetPinState( 0, _SPI_CS, ATMO_GPIO_PinState_High );
+	ATMO_GPIO_SetPinState( 0, csPin, ATMO_GPIO_PinState_High );
 	
 	// restore SPI0.CTRLB
 	SPI0.CTRLB = ctrlb;
@@ -162,29 +164,61 @@ static void _spi_read( const uint8_t *cmdBytes, uint16_t numCmdBytes, uint8_t *r
 /******************************************************************************/
 /*                       Public Function Definitions                          */
 /******************************************************************************/
-ATMO_RTC5Click_Status_t ATMO_RTC5Click_Init( ATMO_RTC5Click_Config_t *config )
+ATMO_RTC5Click_Status_t ATMO_RTC5Click_Init( ATMO_DriverInstanceHandle_t *handle, ATMO_RTC5Click_Config_t *config )
 {
-	_spi_init( _SPI_CS ); 
-	
-	if ( ATMO_RTC5Click_OscillatorStart() != ATMO_RTC5Click_Status_Success )
+	if ( currNumRTC5Clicks >= _ATMO_MAX_RTC5_CLICKS )
 	{
-		ATMO_RTC5Click_OscillatorStop();
+		return ATMO_RTC5Click_Status_Fail;	
+	}
+	
+	*handle = currNumRTC5Clicks;
+	currNumRTC5Clicks++;
+	
+	if ( config != NULL )
+	{
+		if ( ATMO_RTC5Click_SetConfiguration( *handle, config ) != ATMO_RTC5Click_Status_Success )
+		{
+			return ATMO_RTC5Click_Status_Fail;
+		}
+	}
+	
+	_spi_init( config->gpioDriverInstance, config->cs_pin ); 
+	
+	if ( ATMO_RTC5Click_OscillatorStart( *handle ) != ATMO_RTC5Click_Status_Success )
+	{
+		ATMO_RTC5Click_OscillatorStop( *handle );
 		return ATMO_RTC5Click_Status_Fail;
 	}
 	
 	return ATMO_RTC5Click_Status_Success;
 }
 
+ATMO_RTC5Click_Status_t ATMO_RTC5Click_SetConfiguration( ATMO_DriverInstanceHandle_t handle, const ATMO_RTC5Click_Config_t *config )
+{
+	if ( handle >= _ATMO_MAX_RTC5_CLICKS )
+	{
+		return ATMO_RTC5Click_Status_Fail;
+	}
+	
+	if ( config != NULL )
+	{
+		memcpy( &_config[handle], config, sizeof( ATMO_RTC5Click_Config_t) );
+	}
+	else
+	{
+		return ATMO_RTC5Click_Status_Fail;
+	}
+}
 
-ATMO_RTC5Click_Status_t ATMO_RTC5Click_TimeGet( char *time_hhmmss )
+
+ATMO_RTC5Click_Status_t ATMO_RTC5Click_TimeGet( ATMO_DriverInstanceHandle_t handle, char *time_hhmmss )
 {
 	uint8_t cmd[2];
 	
 	// read the timekeeping registers
 	cmd[0] = _INSTR_READ;
 	cmd[1] = _REG_RTCHSEC;
-	
-	_spi_read( cmd, 2, curr_time.memory, 8 );
+	_spi_read( _config[handle].cs_pin, cmd, 2, curr_time.memory, 8 );
 	
 	// print the time in hhmmss format
 	sprintf( time_hhmmss, "%u%u:%u%u:%u%u", curr_time.bits.HRTEN, curr_time.bits.HRONE,
@@ -195,7 +229,7 @@ ATMO_RTC5Click_Status_t ATMO_RTC5Click_TimeGet( char *time_hhmmss )
 }
 
 
-ATMO_RTC5Click_Status_t ATMO_RTC5Click_OscillatorStart( void )
+ATMO_RTC5Click_Status_t ATMO_RTC5Click_OscillatorStart( ATMO_DriverInstanceHandle_t handle )
 {
 	uint8_t cmd[2];
 	uint8_t temp;
@@ -203,7 +237,7 @@ ATMO_RTC5Click_Status_t ATMO_RTC5Click_OscillatorStart( void )
 	// read the RTCSEC register
 	cmd[0] = _INSTR_READ;
 	cmd[1] = _REG_RTCSEC;
-	_spi_read( cmd, 2, &temp, 1 );
+	_spi_read( _config[handle].cs_pin, cmd, 2, &temp, 1 );
 	
 	// toggle the ST (oscillator start) bit
 	temp |= 0x80;
@@ -211,13 +245,13 @@ ATMO_RTC5Click_Status_t ATMO_RTC5Click_OscillatorStart( void )
 	// write the RTCSEC register back
 	cmd[0] = _INSTR_WRITE;
 	cmd[1] = _REG_RTCSEC;
-	_spi_write( cmd, 2, &temp, 1 );
-
+	_spi_write( _config[handle].cs_pin, cmd, 2, &temp, 1 );
+	
 	return ATMO_RTC5Click_Status_Success;
 }
 
 
-ATMO_RTC5Click_Status_t ATMO_RTC5Click_OscillatorStop( void )
+ATMO_RTC5Click_Status_t ATMO_RTC5Click_OscillatorStop( ATMO_DriverInstanceHandle_t handle )
 {
 	uint8_t cmd[2];
 	uint8_t temp;
@@ -225,7 +259,7 @@ ATMO_RTC5Click_Status_t ATMO_RTC5Click_OscillatorStop( void )
 	// read the RTCSEC register
 	cmd[0] = _INSTR_READ;
 	cmd[1] = _REG_RTCSEC;
-	_spi_read( cmd, 2, &temp, 1 );
+	_spi_read( _config[handle].cs_pin, cmd, 2, &temp, 1 );
 	
 	// toggle the ST (oscillator start) bit
 	temp &= ~0x80;
@@ -233,8 +267,8 @@ ATMO_RTC5Click_Status_t ATMO_RTC5Click_OscillatorStop( void )
 	// write the RTCSEC register back
 	cmd[0] = _INSTR_WRITE;
 	cmd[1] = _REG_RTCSEC;
-	_spi_write( cmd, 2, &temp, 1 );
-
+	_spi_write( _config[handle].cs_pin, cmd, 2, &temp, 1 );
+	
 	return ATMO_RTC5Click_Status_Success;
 }
 

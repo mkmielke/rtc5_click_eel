@@ -17,7 +17,8 @@
 /******************************************************************************/
 typedef struct  
 {
-	int myproperty;
+	uint32_t cs_pin;
+	ATMO_DriverInstanceHandle_t gpioDriverInstance;
 } ATMO_RTC5Click_Config_t;
 
 
@@ -31,9 +32,10 @@ typedef enum
 /******************************************************************************/
 /*                       Public Function Declarations                         */
 /******************************************************************************/
-ATMO_RTC5Click_Status_t ATMO_RTC5Click_Init( ATMO_RTC5Click_Config_t *config );
-ATMO_RTC5Click_Status_t ATMO_RTC5Click_TimeGet( char *time_hhmmss );
-ATMO_RTC5Click_Status_t ATMO_RTC5Click_OscillatorStart( void );
-ATMO_RTC5Click_Status_t ATMO_RTC5Click_OscillatorStop( void );
+ATMO_RTC5Click_Status_t ATMO_RTC5Click_Init( ATMO_DriverInstanceHandle_t *handle, ATMO_RTC5Click_Config_t *config );
+ATMO_RTC5Click_Status_t ATMO_RTC5Click_SetConfiguration( ATMO_DriverInstanceHandle_t handle, const ATMO_RTC5Click_Config_t *config );
+ATMO_RTC5Click_Status_t ATMO_RTC5Click_TimeGet( ATMO_DriverInstanceHandle_t handle, char *time_hhmmss );
+ATMO_RTC5Click_Status_t ATMO_RTC5Click_OscillatorStart( ATMO_DriverInstanceHandle_t handle );
+ATMO_RTC5Click_Status_t ATMO_RTC5Click_OscillatorStop( ATMO_DriverInstanceHandle_t handle );
 
 #endif
