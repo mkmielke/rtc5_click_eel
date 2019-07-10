@@ -213,18 +213,7 @@ ATMO_RTC5Click_Status_t ATMO_RTC5Click_OscillatorStart( void )
 	cmd[1] = _REG_RTCSEC;
 	_spi_write( cmd, 2, &temp, 1 );
 
-	ATMO_PLATFORM_DelayMilliseconds( 2 );
-
-	cmd[0] = _INSTR_READ;
-	cmd[1] = _REG_RTCWKDAY;
-	_spi_read( cmd, 2, &temp, 1 );
-
-	if ( temp & 0x20 ) // if the OSCRUN bit is set
-	{
-		return ATMO_RTC5Click_Status_Success;
-	}
-
-	return ATMO_RTC5Click_Status_Fail;
+	return ATMO_RTC5Click_Status_Success;
 }
 
 
@@ -245,17 +234,6 @@ ATMO_RTC5Click_Status_t ATMO_RTC5Click_OscillatorStop( void )
 	cmd[0] = _INSTR_WRITE;
 	cmd[1] = _REG_RTCSEC;
 	_spi_write( cmd, 2, &temp, 1 );
-
-	ATMO_PLATFORM_DelayMilliseconds( 2 );
-
-	cmd[0] = _INSTR_READ;
-	cmd[1] = _REG_RTCWKDAY;
-	_spi_read( cmd, 2, &temp, 1 );
-
-	if ( temp & 0x20 ) // if the OSCRUN bit is set
-	{
-		return ATMO_RTC5Click_Status_Fail;
-	}
 
 	return ATMO_RTC5Click_Status_Success;
 }
